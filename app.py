@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Web UI for Video RAG Engine using Flask."""
+"""Web UI for Video RAG Engine using Flask - Lightning AI Compatible."""
 
 import os
 import sys
@@ -54,7 +54,7 @@ def upload_video():
         return jsonify({'error': 'No file provided'}), 400
     
     file = request.files['file']
-    config = request.form.get('config', 'config/balanced.yaml')
+    config = request.form.get('config', 'config/default.yaml')
     
     if file.filename == '':
         return jsonify({'error': 'No file selected'}), 400

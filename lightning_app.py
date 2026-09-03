@@ -1,41 +1,28 @@
-"""Lightning AI Studio App for Video RAG Engine."""
-
 import lightning as L
 from lightning.app.components import PythonServer
-import subprocess
-import sys
-
+import os
 
 class VideoRAGServer(PythonServer):
-    """Lightning AI server component for Video RAG Engine."""
-
     def __init__(self):
         super().__init__(
             port=5000,
-            cloud_compute=L.CloudCompute("gpu"),  # Request GPU
+            cloud_compute=L.CloudCompute("gpu"),
         )
 
     def setup(self):
-        """Install dependencies and setup models."""
-        # Install requirements (torch already installed)
+        # Install dependencies
+        import subprocess
+        import sys
         subprocess.check_call([sys.executable, "-m", "pip", "install", "-r", "requirements-lightning.txt"])
         
-        # Download AI models
-        from scripts.download_models import download_models
-        download_models()
-        
-        # Start Flask app
+        # Import and setup Flask app
         from app import app
-        self.app = app
+        self._app = app
 
     def predict(self, request):
-        """Handle predictions."""
-        return {"status": "Video RAG Engine running on Lightning AI"}
-
+        return {"status": "Video RAG Engine running"}
 
 class VideoRAGApp(L.LightningFlow):
-    """Main Lightning App."""
-
     def __init__(self):
         super().__init__()
         self.server = VideoRAGServer()
@@ -45,6 +32,5 @@ class VideoRAGApp(L.LightningFlow):
 
     def configure_layout(self):
         return {"name": "Video RAG Engine", "content": self.server.url}
-
 
 app = L.LightningApp(VideoRAGApp())
