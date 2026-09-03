@@ -232,10 +232,19 @@ def reset():
     return jsonify({'status': 'reset'})
 
 if __name__ == '__main__':
-    print("\n🌐 Video RAG Engine - Web UI")
-    print("=" * 50)
-    print("\n📱 Open your browser and go to:")
-    print("   👉 http://localhost:5000")
-    print("\nPress Ctrl+C to stop the server\n")
+    # Detect Lightning AI environment
+    is_lightning = os.environ.get('LIGHTNING_APP_STATE_URL') is not None
     
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    if is_lightning:
+        print("\n⚡ Running on Lightning AI")
+        print("=" * 50)
+        # Lightning AI handles the URL/proxy automatically
+        app.run(debug=False, host='0.0.0.0', port=5000)
+    else:
+        print("\n🌐 Video RAG Engine - Web UI")
+        print("=" * 50)
+        print("\n📱 Open your browser and go to:")
+        print("   👉 http://localhost:5000")
+        print("\nPress Ctrl+C to stop the server\n")
+        
+        app.run(debug=True, host='0.0.0.0', port=5000)
