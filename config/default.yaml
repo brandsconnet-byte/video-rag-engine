@@ -1,0 +1,229 @@
+# Video RAG Engine - Default Configuration
+
+# ==============================================================================
+# STEP 1: SCENE DETECTION (PySceneDetect)
+# ==============================================================================
+scene_detection:
+  # Sensitivity level: 'conservative' | 'balanced' | 'aggressive'
+  # - conservative: High threshold, fewer false positives (good for edited videos)
+  # - balanced: Medium threshold, balanced detection
+  # - aggressive: Low threshold, catches all transitions (good for raw footage)
+  sensitivity: "balanced"
+  
+  # Custom threshold (0.0 to 1.0) - overrides sensitivity if set
+  # Lower = more scenes detected
+  custom_threshold: null
+  
+  # Adaptive threshold: automatically adjusts based on video darkness
+  adaptive_threshold: true
+  
+  # Minimum scene length in seconds (ignore very short cuts)
+  min_scene_length: 0.5
+  
+  # Keyframe extraction: per scene or multiple per long scene
+  keyframes_per_scene: 1
+  keyframe_interval_seconds: null  # null = one per scene
+
+# ==============================================================================
+# STEP 2: DUAL-BRAIN AI INDEXING
+# ==============================================================================
+dual_brain:
+  # OBJECT DETECTION (YOLOv8)
+  yolo:
+    # Model size: 'nano' | 'small' | 'medium' | 'large' | 'xlarge'
+    # - nano: Fastest, ~5M params (good for CPU)
+    # - small: Fast, ~11M params (balanced)
+    # - medium: Balanced, ~25M params (recommended)
+    # - large: Accurate, ~43M params (GPU recommended)
+    # - xlarge: Most accurate, ~68M params (GPU required)
+    model_size: "medium"
+    
+    # Confidence threshold for object detection (0.0 to 1.0)
+    confidence_threshold: 0.5
+    
+    # IoU (Intersection over Union) threshold for NMS
+    iou_threshold: 0.45
+    
+    # Use GPU if available
+    use_gpu: true
+    
+    # Device: 'cpu' | 'cuda' | 'mps' (auto-detected if not specified)
+    device: null
+  
+  # SEMANTIC EMBEDDINGS (SigLIP)
+  siglip:
+    # Model variant: 'tiny' | 'base' | 'large'
+    # - tiny: Fast, smaller embeddings (~32M params)
+    # - base: Balanced, ~48M params (recommended)
+    # - large: More detailed embeddings, ~64M params
+    model_variant: "base"
+    
+    # Vector embedding dimension (output size)
+    embedding_dim: 768
+    
+    # Use GPU if available
+    use_gpu: true
+    
+    # Batch processing for SigLIP (images at once)
+    batch_size: 32
+
+# ==============================================================================
+# STEP 3: VECTOR DATABASE (LanceDB)
+# ==============================================================================
+vector_database:
+  # Database file location (local SQLite-like storage)
+  db_path: "./video_rag.db"
+  
+  # Create table name based on video filename
+  auto_table_naming: true
+  table_prefix: "scenes_"
+  
+  # Vector search configuration
+  vector_search:
+    # Number of nearest neighbors to return
+    k_nearest: 10
+    
+    # Similarity threshold (0.0 to 1.0)
+    # Only return results above this score
+    similarity_threshold: 0.5
+    
+    # Search method: 'exhaustive' | 'ivf' (Inverted File Index)
+    # - exhaustive: Slower but more accurate
+    # - ivf: Faster, slightly less accurate (good for large databases)
+    search_method: "ivf"
+    
+    # IVF partitions (only if search_method='ivf')
+    ivf_partitions: 32
+  
+  # Hybrid search configuration
+  hybrid_search:
+    # Weight for vector similarity (0.0 to 1.0)
+    vector_weight: 0.6
+    
+    # Weight for YOLO tag matching (0.0 to 1.0)
+    tag_weight: 0.4
+    
+    # Require exact tag match or fuzzy match
+    exact_tag_match: false
+    tag_fuzzy_threshold: 0.8
+
+# ==============================================================================
+# STEP 4: INTELLIGENT ROUTING & EXPORT
+# ==============================================================================
+intelligent_router:
+  # Duration threshold (seconds) for routing decision
+  # Clips < threshold → Route A (FFmpeg direct)
+  # Clips > threshold → Route B (auto-editor)
+  duration_threshold: 30
+  
+  # Route A: FFmpeg Direct Extraction
+  ffmpeg:
+    # Video codec: 'libx264' | 'libx265' | 'copy' (fastest)
+    codec: "copy"
+    
+    # Audio codec: 'aac' | 'mp3' | 'copy'
+    audio_codec: "copy"
+    
+    # Container format: 'mp4' | 'mov' | 'mkv'
+    container: "mp4"
+    
+    # CRF (quality 0-51): lower = better quality, slower
+    crf: 23
+  
+  # Route B: Auto-Editor (Silence/Motion Detection)
+  auto_editor:
+    # Motion threshold (0.0 to 1.0): how much motion needed
+    motion_threshold: 0.02
+    
+    # Silence threshold (dB): audio level for silence detection
+    silence_threshold: -40
+    
+    # Minimum clip duration (seconds)
+    min_clip_length: 0.5
+    
+    # Speed multiplier for cut-out sections
+    speedup_factor: 2.0
+  
+  # Route C: EDL/XML Export (Pro Editing)
+  edl_export:
+    # Format: 'fcpxml' (Final Cut Pro) | 'premier' (Adobe Premiere) | 'edl' (generic)
+    format: "fcpxml"
+    
+    # Framerate for timecode generation
+    framerate: 24
+    
+    # Include metadata (tags, descriptions)
+    include_metadata: true
+
+# ==============================================================================
+# BATCH QUERY CONFIGURATION
+# ==============================================================================
+batch_queries:
+  # Maximum queries to process simultaneously
+  max_concurrent_queries: 5
+  
+  # Timeout per query (seconds)
+  query_timeout: 30
+  
+  # Batch size for vector operations
+  batch_size: 32
+  
+  # Result caching (prevent duplicate searches)
+  enable_caching: true
+  cache_ttl_minutes: 60
+
+# ==============================================================================
+# OUTPUT SETTINGS
+# ==============================================================================
+output:
+  # Output directory for extracted clips
+  output_dir: "./extracted_clips"
+  
+  # Create subdirectories by query/scene type
+  organize_by_query: true
+  
+  # Naming convention: '{query}_{timestamp}_{index}'
+  file_naming: "{query}_{timestamp}_{index}"
+  
+  # Keep original filename metadata
+  preserve_metadata: true
+  
+  # Automatically create mosaic/contact sheet of keyframes
+  generate_contact_sheet: true
+  contact_sheet_cols: 6
+
+# ==============================================================================
+# LOGGING & DEBUG
+# ==============================================================================
+logging:
+  # Log level: 'DEBUG' | 'INFO' | 'WARNING' | 'ERROR'
+  level: "INFO"
+  
+  # Log file location
+  log_file: "video_rag_engine.log"
+  
+  # Log to console as well
+  console_output: true
+  
+  # Save detailed debug info
+  save_debug_frames: false
+  debug_output_dir: "./debug_frames"
+
+# ==============================================================================
+# PERFORMANCE TUNING
+# ==============================================================================
+performance:
+  # Number of CPU threads to use
+  num_threads: null  # null = auto-detect
+  
+  # Process video at reduced resolution (faster)
+  # null = full resolution
+  # 0.5 = half resolution (50% faster)
+  processing_scale: null
+  
+  # Memory limit for processing (GB)
+  # null = no limit
+  memory_limit: null
+  
+  # Progress bar detail level
+  verbose: true

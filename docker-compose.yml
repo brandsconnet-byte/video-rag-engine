@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  video-rag-engine:
+    build: .
+    container_name: video-rag-engine
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./uploaded_videos:/app/uploaded_videos
+      - ./extracted_clips:/app/extracted_clips
+      - ./video_rag.db:/app/video_rag.db
+    environment:
+      - FLASK_ENV=production
+      - PYTHONUNBUFFERED=1
+    restart: always

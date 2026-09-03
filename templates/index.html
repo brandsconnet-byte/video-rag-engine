@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video RAG Engine - Web UI</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 900px;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .section {
+            margin-bottom: 40px;
+        }
+
+        .section-title {
+            font-size: 1.5em;
+            color: #333;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .upload-area {
+            border: 3px dashed #667eea;
+            border-radius: 10px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: #f8f9ff;
+        }
+
+        .upload-area:hover {
+            background: #f0f2ff;
+            border-color: #764ba2;
+        }
+
+        .upload-area.dragover {
+            background: #e8ecff;
+            border-color: #764ba2;
+            transform: scale(1.02);
+        }
+
+        .upload-icon {
+            font-size: 3em;
+            margin-bottom: 10px;
+        }
+
+        .upload-text {
+            color: #333;
+            font-weight: 500;
+        }
+
+        .upload-subtext {
+            color: #999;
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .config-select {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .config-option {
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .config-option:hover {
+            border-color: #667eea;
+            background: #f8f9ff;
+        }
+
+        .config-option input[type="radio"] {
+            display: none;
+        }
+
+        .config-option input[type="radio"]:checked + .config-label {
+            color: #667eea;
+        }
+
+        .config-option.active {
+            border-color: #667eea;
+            background: #f0f2ff;
+        }
+
+        .config-label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .config-desc {
+            font-size: 0.85em;
+            color: #999;
+        }
+
+        .progress-container {
+            display: none;
+            margin-top: 20px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 30px;
+            background: #e0e0e0;
+            border-radius: 15px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            width: 0%;
+            transition: width 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+
+        .status-message {
+            margin-top: 15px;
+            padding: 15px;
+            background: #f0f2ff;
+            border-left: 4px solid #667eea;
+            border-radius: 5px;
+            color: #333;
+            font-size: 0.95em;
+        }
+
+        .search-section {
+            display: none;
+        }
+
+        .search-box {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1em;
+            transition: border-color 0.3s ease;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        button {
+            padding: 12px 30px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1em;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .results {
+            margin-top: 20px;
+        }
+
+        .result-item {
+            padding: 15px;
+            background: #f8f9ff;
+            border-left: 4px solid #667eea;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+
+        .result-time {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .result-tags {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+            margin-top: 8px;
+        }
+
+        .tag {
+            background: #667eea;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 15px;
+            font-size: 0.85em;
+        }
+
+        .clip-item {
+            padding: 15px;
+            background: #f0fff4;
+            border-left: 4px solid #48bb78;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+
+        .clip-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .button-group button {
+            flex: 1;
+        }
+
+        .error-message {
+            padding: 15px;
+            background: #fff5f5;
+            border-left: 4px solid #f56565;
+            border-radius: 5px;
+            color: #c53030;
+            margin-top: 15px;
+        }
+
+        .success-message {
+            padding: 15px;
+            background: #f0fff4;
+            border-left: 4px solid #48bb78;
+            border-radius: 5px;
+            color: #22543d;
+            margin-top: 15px;
+        }
+
+        @media (max-width: 600px) {
+            .config-select {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 1.8em;
+            }
+            
+            .content {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎬 Video RAG Engine</h1>
+            <p>AI-Powered Scene Detection & Clip Extraction</p>
+        </div>
+
+        <div class="content">
+            <!-- Upload Section -->
+            <div class="section">
+                <div class="section-title">📹 Step 1: Upload Video</div>
+                
+                <div class="config-select">
+                    <label class="config-option active">
+                        <input type="radio" name="config" value="config/fast.yaml" checked>
+                        <span class="config-label">⚡ Fast</span>
+                        <span class="config-desc">45 min (CPU)</span>
+                    </label>
+                    <label class="config-option">
+                        <input type="radio" name="config" value="config/balanced.yaml">
+                        <span class="config-label">⚖️ Balanced</span>
+                        <span class="config-desc">75 min (Mixed)</span>
+                    </label>
+                    <label class="config-option">
+                        <input type="radio" name="config" value="config/accurate.yaml">
+                        <span class="config-label">🎯 Accurate</span>
+                        <span class="config-desc">120 min (GPU)</span>
+                    </label>
+                </div>
+
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-icon">📥</div>
+                    <div class="upload-text">Drag & drop your video here</div>
+                    <div class="upload-subtext">or click to select (MP4, MOV, MKV, AVI, WebM)</div>
+                    <input type="file" id="fileInput" accept=".mp4,.mov,.mkv,.avi,.webm" />
+                </div>
+
+                <div class="progress-container" id="progressContainer">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill">0%</div>
+                    </div>
+                    <div class="status-message" id="statusMessage">Initializing...</div>
+                </div>
+            </div>
+
+            <!-- Search Section -->
+            <div class="section search-section" id="searchSection">
+                <div class="section-title">🔍 Step 2: Search Scenes</div>
+                
+                <div class="search-box">
+                    <input type="text" id="searchQuery" placeholder="Search for scenes (e.g., 'drone shot', 'car', 'person')">
+                    <button onclick="searchScenes()">Search</button>
+                </div>
+
+                <div id="searchResults"></div>
+
+                <div class="button-group">
+                    <button onclick="extractClips()">📥 Extract Matching Clips</button>
+                    <button onclick="reset()">🔄 Reset</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        const API_BASE = '/api';
+        let currentConfig = 'config/balanced.yaml';
+
+        // Upload area drag & drop
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+
+        uploadArea.addEventListener('click', () => fileInput.click());
+
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            handleFile(e.dataTransfer.files[0]);
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            handleFile(e.target.files[0]);
+        });
+
+        // Config selection
+        document.querySelectorAll('input[name="config"]').forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                currentConfig = e.target.value;
+                document.querySelectorAll('.config-option').forEach(opt => opt.classList.remove('active'));
+                e.target.parentElement.classList.add('active');
+            });
+        });
+
+        function handleFile(file) {
+            if (!file) return;
+
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('config', currentConfig);
+
+            uploadFile(formData);
+        }
+
+        async function uploadFile(formData) {
+            try {
+                const response = await fetch(`${API_BASE}/upload`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) throw new Error('Upload failed');
+
+                document.getElementById('progressContainer').style.display = 'block';
+                pollStatus();
+
+            } catch (error) {
+                showError('Upload failed: ' + error.message);
+            }
+        }
+
+        async function pollStatus() {
+            try {
+                const response = await fetch(`${API_BASE}/status`);
+                const data = await response.json();
+
+                document.getElementById('progressFill').style.width = data.progress + '%';
+                document.getElementById('progressFill').textContent = data.progress + '%';
+                document.getElementById('statusMessage').textContent = data.message;
+
+                if (data.status === 'complete') {
+                    document.getElementById('searchSection').style.display = 'block';
+                    showSuccess(`✅ ${data.message}`);
+                } else if (data.status === 'error') {
+                    showError(`❌ ${data.error}`);
+                } else if (data.status === 'processing') {
+                    setTimeout(pollStatus, 2000);
+                }
+            } catch (error) {
+                console.error('Status poll failed:', error);
+                setTimeout(pollStatus, 2000);
+            }
+        }
+
+        async function searchScenes() {
+            const query = document.getElementById('searchQuery').value.trim();
+            if (!query) {
+                showError('Please enter a search query');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/search`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query })
+                });
+
+                if (!response.ok) throw new Error('Search failed');
+                const data = await response.json();
+
+                displaySearchResults(data);
+            } catch (error) {
+                showError('Search failed: ' + error.message);
+            }
+        }
+
+        function displaySearchResults(data) {
+            const resultsDiv = document.getElementById('searchResults');
+            resultsDiv.innerHTML = '';
+
+            if (data.num_matches === 0) {
+                resultsDiv.innerHTML = '<div class="error-message">No matching scenes found</div>';
+                return;
+            }
+
+            const html = `
+                <div class="success-message">Found ${data.num_matches} matching scenes</div>
+                <div class="results">
+                    ${data.results.map(r => `
+                        <div class="result-item">
+                            <div class="result-time">Scene ${r.scene_id}: ${r.start_time} - ${r.end_time} (${r.duration})</div>
+                            ${r.tags.length > 0 ? `
+                                <div class="result-tags">
+                                    ${r.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
+                                </div>
+                            ` : ''}
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+            resultsDiv.innerHTML = html;
+        }
+
+        async function extractClips() {
+            const query = document.getElementById('searchQuery').value.trim();
+            if (!query) {
+                showError('Please enter a search query');
+                return;
+            }
+
+            try {
+                showStatus('Extracting clips...');
+                const response = await fetch(`${API_BASE}/extract`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query })
+                });
+
+                if (!response.ok) throw new Error('Extraction failed');
+                const data = await response.json();
+
+                displayClips(data);
+            } catch (error) {
+                showError('Extraction failed: ' + error.message);
+            }
+        }
+
+        function displayClips(data) {
+            const resultsDiv = document.getElementById('searchResults');
+            const html = `
+                <div class="success-message">✅ Extracted ${data.num_extracted} clips</div>
+                <div class="results">
+                    ${data.clips.map(c => `
+                        <div class="clip-item">
+                            <div class="clip-info">
+                                <div>
+                                    <strong>Scene ${c.scene_id}</strong> • ${c.route} • ${c.duration}
+                                </div>
+                            </div>
+                            <div style="font-size: 0.9em; color: #666; margin-top: 8px;">
+                                📁 ${c.clip_path}
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+            resultsDiv.innerHTML = html;
+        }
+
+        async function reset() {
+            try {
+                await fetch(`${API_BASE}/reset`, { method: 'POST' });
+                location.reload();
+            } catch (error) {
+                showError('Reset failed');
+            }
+        }
+
+        function showError(msg) {
+            const div = document.createElement('div');
+            div.className = 'error-message';
+            div.textContent = msg;
+            document.querySelector('.content').insertBefore(div, document.querySelector('.section'));
+            setTimeout(() => div.remove(), 5000);
+        }
+
+        function showSuccess(msg) {
+            const div = document.createElement('div');
+            div.className = 'success-message';
+            div.textContent = msg;
+            document.querySelector('.content').insertBefore(div, document.querySelector('.section'));
+            setTimeout(() => div.remove(), 5000);
+        }
+
+        function showStatus(msg) {
+            document.getElementById('statusMessage').textContent = msg;
+        }
+    </script>
+</body>
+</html>
