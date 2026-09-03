@@ -39,19 +39,19 @@ def download_models():
         sys.exit(1)
     
     try:
-        from transformers import CLIPModel, CLIPProcessor
+        from transformers import AutoModel, AutoProcessor
         print("\n📥 Downloading SigLIP models...")
         
         models = [
-            "google/siglip-tiny-patch16-256",
-            "google/siglip-base-patch16-256",
-            "google/siglip-large-patch16-256",
+            "google/siglip-so400m-patch14-224",  # tiny
+            "google/siglip-base-patch16-224",     # base
+            "google/siglip-large-patch16-384",    # large
         ]
         
         for model in models:
             print(f"  Downloading {model}...")
-            CLIPModel.from_pretrained(model)
-            CLIPProcessor.from_pretrained(model)
+            AutoModel.from_pretrained(model)
+            AutoProcessor.from_pretrained(model)
             print(f"  ✅ {model} downloaded")
         
     except Exception as e:
